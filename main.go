@@ -127,6 +127,8 @@ func getUrlInstagram(url string) (link string, typeLink int) {
 
 		}
 
+		log.Println("RESPONSE DECODER: ", data)
+
 		wg.Done()
 	})
 
