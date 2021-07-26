@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/gocolly/colly"
 	"github.com/joho/godotenv"
@@ -73,6 +74,9 @@ var (
 
 func getUrlInstagram(url string) (link string, typeLink int) {
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	c := colly.NewCollector(
 		//colly.CacheDir("./_instagram_cache/"),
 		colly.UserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"),
@@ -89,6 +93,7 @@ func getUrlInstagram(url string) (link string, typeLink int) {
 	c.OnError(func(r *colly.Response, e error) {
 		log.Println("error:", e, r.Request.URL, string(r.Body))
 		link = ""
+		wg.Done()
 	})
 
 	c.OnResponse(func(r *colly.Response) {
@@ -107,6 +112,7 @@ func getUrlInstagram(url string) (link string, typeLink int) {
 			err := json.Unmarshal([]byte(splitAgain[0]), &data)
 			if err != nil {
 				link = ""
+				wg.Done()
 			}
 
 			if len(data.EntryData.PostPage) > 0 {
@@ -120,9 +126,14 @@ func getUrlInstagram(url string) (link string, typeLink int) {
 			}
 
 		}
+
+		wg.Done()
 	})
 
 	c.Visit(url)
+
+	wg.Wait()
+
 	return
 }
 
