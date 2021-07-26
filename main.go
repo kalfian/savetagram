@@ -1,11 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"os"
+	"strings"
+
+	"github.com/gocolly/colly"
+	"github.com/joho/godotenv"
+	"github.com/kalfian/savetagram/models"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -35,12 +40,95 @@ func main() {
 			continue
 		}
 
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Mohon tunggu sebentar...")
 		msg.ReplyToMessageID = update.Message.MessageID
-
 		bot.Send(msg)
+
+		linkMedia, typeMedia := getUrlInstagram(update.Message.Text)
+
+		if linkMedia == "" {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Gagal memperoleh data...")
+			msg.ReplyToMessageID = update.Message.MessageID
+			bot.Send(msg)
+			continue
+		}
+
+		if typeMedia == VIDEO {
+			videoMsg := tgbotapi.NewVideoUpload(update.Message.Chat.ID, linkMedia)
+			videoMsg.ReplyToMessageID = update.Message.MessageID
+			bot.Send(videoMsg)
+		} else if typeMedia == PHOTO {
+			photoMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, linkMedia)
+			photoMsg.ReplyToMessageID = update.Message.MessageID
+			bot.Send(photoMsg)
+		}
 	}
 
+}
+
+var (
+	VIDEO = 1
+	PHOTO = 2
+)
+
+func getUrlInstagram(url string) (link string, typeLink int) {
+
+	c := colly.NewCollector(
+		//colly.CacheDir("./_instagram_cache/"),
+		colly.UserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"),
+	)
+
+	c.OnRequest(func(r *colly.Request) {
+		r.Headers.Set("X-Requested-With", "XMLHttpRequest")
+	})
+
+	c.OnHTML("html", func(e *colly.HTMLElement) {
+		// fmt.Printf("%+v", e)
+	})
+
+	c.OnError(func(r *colly.Response, e error) {
+		log.Println("error:", e, r.Request.URL, string(r.Body))
+		link = ""
+	})
+
+	c.OnResponse(func(r *colly.Response) {
+		// fmt.Printf("%+v", string(r.Body))
+		data := string(r.Body)
+		delimiter := "window._sharedData = "
+		dataSplited := strings.Split(data, delimiter)
+		if len(dataSplited) > 0 {
+			delimiter2 := ";</script>"
+			splitAgain := strings.Split(dataSplited[1], delimiter2)
+
+			// fmt.Printf("%+v", splitAgain[0])
+
+			data := models.IgResponse{}
+
+			err := json.Unmarshal([]byte(splitAgain[0]), &data)
+			if err != nil {
+				link = ""
+			}
+
+			if len(data.EntryData.PostPage) > 0 {
+				link = data.EntryData.PostPage[0].GraphQL.ShortcodeMedia.DisplayUrl
+				typeLink = VIDEO
+
+				if data.EntryData.PostPage[0].GraphQL.ShortcodeMedia.VideoUrl != "" {
+					link = data.EntryData.PostPage[0].GraphQL.ShortcodeMedia.VideoUrl
+					typeLink = PHOTO
+				}
+			}
+
+		}
+	})
+
+	c.Visit(url)
+	return
+}
+
+func TrimSuffix(s, suffix string) string {
+	if strings.HasSuffix(s, suffix) {
+		s = s[:len(s)-len(suffix)]
+	}
+	return s
 }
