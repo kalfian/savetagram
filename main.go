@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -87,6 +88,15 @@ func getUrlInstagram(url string) (string, int) {
 
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("X-Requested-With", "XMLHttpRequest")
+		r.Headers.Set("Cache-Control", "no-cache")
+		r.Headers.Set("Referer", "https://www.instagram.com/"+string(md5.New().Sum(nil)))
+		if r.Ctx.Get("gis") != "" {
+			gis := fmt.Sprintf("%s:%s", r.Ctx.Get("gis"), r.Ctx.Get("variables"))
+			h := md5.New()
+			h.Write([]byte(gis))
+			gisHash := fmt.Sprintf("%x", h.Sum(nil))
+			r.Headers.Set("X-Instagram-GIS", gisHash)
+		}
 	})
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
