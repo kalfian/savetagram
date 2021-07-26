@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -72,7 +73,9 @@ var (
 	PHOTO = 2
 )
 
-func getUrlInstagram(url string) (link string, typeLink int) {
+func getUrlInstagram(url string) (string, int) {
+	link := ""
+	typeLink := 0
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -111,9 +114,11 @@ func getUrlInstagram(url string) (link string, typeLink int) {
 
 			err := json.Unmarshal([]byte(splitAgain[0]), &data)
 			if err != nil {
-				link = "ERROR DECODE"
+				link = ""
 				wg.Done()
 			}
+
+			log.Println(fmt.Sprintf("%+v", data))
 
 			if len(data.EntryData.PostPage) > 0 {
 				link = data.EntryData.PostPage[0].GraphQL.ShortcodeMedia.DisplayUrl
@@ -127,8 +132,6 @@ func getUrlInstagram(url string) (link string, typeLink int) {
 
 		}
 
-		log.Println("RESPONSE DECODER: ", data)
-
 		wg.Done()
 	})
 
@@ -136,7 +139,7 @@ func getUrlInstagram(url string) (link string, typeLink int) {
 
 	wg.Wait()
 
-	return
+	return link, typeLink
 }
 
 func TrimSuffix(s, suffix string) string {
