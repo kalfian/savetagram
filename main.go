@@ -66,6 +66,8 @@ func main() {
 		}
 	}
 
+	// fmt.Println(getUrlInstagram("https://www.instagram.com/p/CRyQhvqhQm7/?utm_source=ig_web_copy_link"))
+
 }
 
 var (
@@ -81,14 +83,14 @@ func getUrlInstagram(url string) (string, int) {
 	wg.Add(1)
 
 	c := colly.NewCollector(
-		// colly.CacheDir("./_instagram_cache/"),
+		//colly.CacheDir("./_instagram_cache/"),
 		colly.UserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"),
 	)
 
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("X-Requested-With", "XMLHttpRequest")
-		r.Headers.Set("Cache-Control", "no-cache")
-		// r.Headers.Set("Referer", "https://www.instagram.com/"+string(md5.New().Sum(nil)))
+		// r.Headers.Set("Cache-Control", "no-cache")
+		r.Headers.Set("Referer", "https://www.instagram.com/"+"2626525925817652203")
 		if r.Ctx.Get("gis") != "" {
 			gis := fmt.Sprintf("%s:%s", r.Ctx.Get("gis"), r.Ctx.Get("variables"))
 			h := md5.New()
@@ -111,6 +113,8 @@ func getUrlInstagram(url string) (string, int) {
 	c.OnResponse(func(r *colly.Response) {
 		// fmt.Printf("%+v", string(r.Body))
 		data := string(r.Body)
+		log.Println(fmt.Sprintf("Data Belum Diolah: %+v", data))
+		log.Println("----------------------------------------------------")
 		delimiter := "window._sharedData = "
 		dataSplited := strings.Split(data, delimiter)
 		if len(dataSplited) > 0 {
