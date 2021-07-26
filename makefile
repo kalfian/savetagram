@@ -3,3 +3,5 @@ build:
 
 serve-god:
 	god --nohup --logfile savetagram.log --rundir /home/kalfianc/savetagram -- ./build/savetagram
+
+.PHONY: build serve-god
