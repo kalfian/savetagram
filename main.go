@@ -118,7 +118,8 @@ func getUrlInstagram(url string) (string, int) {
 				wg.Done()
 			}
 
-			log.Println(fmt.Sprintf("%+v", data))
+			log.Println(fmt.Sprintf("Data Mentah: %+v", splitAgain[0]))
+			log.Println(fmt.Sprintf("Data Jadi: %+v", data))
 
 			if len(data.EntryData.PostPage) > 0 {
 				link = data.EntryData.PostPage[0].GraphQL.ShortcodeMedia.DisplayUrl
@@ -130,6 +131,8 @@ func getUrlInstagram(url string) (string, int) {
 				}
 			}
 
+		} else {
+			log.Println("Data tidak sesuai")
 		}
 
 		wg.Done()
