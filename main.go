@@ -9,11 +9,10 @@ import (
 	"strings"
 	"sync"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/gocolly/colly"
 	"github.com/joho/godotenv"
 	"github.com/kalfian/savetagram/models"
-
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func main() {
@@ -82,14 +81,14 @@ func getUrlInstagram(url string) (string, int) {
 	wg.Add(1)
 
 	c := colly.NewCollector(
-		//colly.CacheDir("./_instagram_cache/"),
+		// colly.CacheDir("./_instagram_cache/"),
 		colly.UserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"),
 	)
 
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("X-Requested-With", "XMLHttpRequest")
 		r.Headers.Set("Cache-Control", "no-cache")
-		r.Headers.Set("Referer", "https://www.instagram.com/"+string(md5.New().Sum(nil)))
+		// r.Headers.Set("Referer", "https://www.instagram.com/"+string(md5.New().Sum(nil)))
 		if r.Ctx.Get("gis") != "" {
 			gis := fmt.Sprintf("%s:%s", r.Ctx.Get("gis"), r.Ctx.Get("variables"))
 			h := md5.New()
