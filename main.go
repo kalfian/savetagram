@@ -111,7 +111,7 @@ func getUrlInstagram(url string) (link string, typeLink int) {
 
 			err := json.Unmarshal([]byte(splitAgain[0]), &data)
 			if err != nil {
-				link = ""
+				link = "ERROR DECODE"
 				wg.Done()
 			}
 
