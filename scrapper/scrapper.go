@@ -110,14 +110,21 @@ func Handle(update tgbotapi.Update, bot *tgbotapi.BotAPI) error {
 		return nil
 	}
 
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Mohon tunggu sebentar...")
+	if update.Message.Text == "/start" {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Paste the instagram link here to start 🥳")
+		msg.ReplyToMessageID = update.Message.MessageID
+		bot.Send(msg)
+		return nil
+	}
+
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Please wait a sec...")
 	msg.ReplyToMessageID = update.Message.MessageID
 	bot.Send(msg)
 
 	linkMedia, typeMedia := GetUrlInstagram(update.Message.Text)
 
 	if linkMedia == "" {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Gagal memperoleh data...")
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Error when get data...")
 
 		msg.ReplyToMessageID = update.Message.MessageID
 		bot.Send(msg)
