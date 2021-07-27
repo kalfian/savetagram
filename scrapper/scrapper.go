@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"sync"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/gocolly/colly"
+	"github.com/kalfian/savetagram/downloader"
 	"github.com/kalfian/savetagram/models"
 )
 
@@ -100,4 +103,52 @@ func TrimSuffix(s, suffix string) string {
 		s = s[:len(s)-len(suffix)]
 	}
 	return s
+}
+
+func Handle(update tgbotapi.Update, bot *tgbotapi.BotAPI) error {
+	if update.Message == nil { // ignore any non-Message Updates
+		return nil
+	}
+
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Mohon tunggu sebentar...")
+	msg.ReplyToMessageID = update.Message.MessageID
+	bot.Send(msg)
+
+	linkMedia, typeMedia := GetUrlInstagram(update.Message.Text)
+
+	if linkMedia == "" {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Gagal memperoleh data...")
+
+		msg.ReplyToMessageID = update.Message.MessageID
+		bot.Send(msg)
+		return nil
+	}
+
+	fmt.Println("-----------------------------------------")
+	fmt.Println(linkMedia)
+	fmt.Println("-----------------------------------------")
+
+	fileName, err := downloader.DownloadFile(linkMedia, bot)
+	if err != nil {
+		log.Println(err.Error())
+		return nil
+	}
+
+	if typeMedia == VIDEO {
+
+		videoMsg := tgbotapi.NewVideoUpload(update.Message.Chat.ID, fileName)
+		videoMsg.ReplyToMessageID = update.Message.MessageID
+		_, err = bot.Send(videoMsg)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		os.Remove(fileName)
+	} else if typeMedia == PHOTO {
+		photoMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, fileName)
+		photoMsg.ReplyToMessageID = update.Message.MessageID
+		bot.Send(photoMsg)
+		os.Remove(fileName)
+	}
+
+	return nil
 }
