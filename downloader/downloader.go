@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 type WriteCounter struct {
@@ -25,10 +24,6 @@ func (wc *WriteCounter) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-var (
-	botApi *tgbotapi.BotAPI
-)
-
 // PrintProgress prints the progress of a file write
 func (wc WriteCounter) PrintProgress() {
 	// Clear the line by using a character return to go back to the start and remove
@@ -41,9 +36,7 @@ func (wc WriteCounter) PrintProgress() {
 	fmt.Printf("\rDownloading... %s complete", humanize.IBytes(wc.Total))
 }
 
-func DownloadFile(url string, bot *tgbotapi.BotAPI) (string, error) {
-
-	botApi = bot
+func DownloadFile(url string) (string, error) {
 
 	fileName := ""
 	fileTemp := strconv.Itoa(int(time.Now().Unix()))

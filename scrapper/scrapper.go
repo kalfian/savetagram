@@ -135,7 +135,7 @@ func Handle(update tgbotapi.Update, bot *tgbotapi.BotAPI) error {
 	fmt.Println(linkMedia)
 	fmt.Println("-----------------------------------------")
 
-	fileName, err := downloader.DownloadFile(linkMedia, bot)
+	fileName, err := downloader.DownloadFile(linkMedia)
 	if err != nil {
 		log.Println(err.Error())
 		return nil
