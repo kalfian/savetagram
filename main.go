@@ -12,6 +12,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/gocolly/colly"
 	"github.com/joho/godotenv"
+	"github.com/kalfian/savetagram/downloader"
 	"github.com/kalfian/savetagram/models"
 )
 
@@ -50,19 +51,36 @@ func main() {
 
 		if linkMedia == "" {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Gagal memperoleh data...")
+
 			msg.ReplyToMessageID = update.Message.MessageID
 			bot.Send(msg)
 			continue
 		}
 
+		fmt.Println("-----------------------------------------")
+		fmt.Println(linkMedia)
+		fmt.Println("-----------------------------------------")
+
+		fileName, err := downloader.DownloadFile(linkMedia, bot)
+		if err != nil {
+			log.Println(err.Error())
+			continue
+		}
+
 		if typeMedia == VIDEO {
-			videoMsg := tgbotapi.NewVideoUpload(update.Message.Chat.ID, linkMedia)
+
+			videoMsg := tgbotapi.NewVideoUpload(update.Message.Chat.ID, fileName)
 			videoMsg.ReplyToMessageID = update.Message.MessageID
-			bot.Send(videoMsg)
+			_, err = bot.Send(videoMsg)
+			if err != nil {
+				log.Println(err.Error())
+			}
+			os.Remove(fileName)
 		} else if typeMedia == PHOTO {
-			photoMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, linkMedia)
+			photoMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, fileName)
 			photoMsg.ReplyToMessageID = update.Message.MessageID
 			bot.Send(photoMsg)
+			os.Remove(fileName)
 		}
 	}
 
@@ -113,8 +131,6 @@ func getUrlInstagram(url string) (string, int) {
 	c.OnResponse(func(r *colly.Response) {
 		// fmt.Printf("%+v", string(r.Body))
 		data := string(r.Body)
-		log.Println(fmt.Sprintf("Data Belum Diolah: %+v", data))
-		log.Println("----------------------------------------------------")
 		delimiter := "window._sharedData = "
 		dataSplited := strings.Split(data, delimiter)
 		if len(dataSplited) > 0 {
@@ -131,16 +147,13 @@ func getUrlInstagram(url string) (string, int) {
 				wg.Done()
 			}
 
-			log.Println(fmt.Sprintf("Data Mentah: %+v", splitAgain[0]))
-			log.Println(fmt.Sprintf("Data Jadi: %+v", data))
-
 			if len(data.EntryData.PostPage) > 0 {
 				link = data.EntryData.PostPage[0].GraphQL.ShortcodeMedia.DisplayUrl
-				typeLink = VIDEO
+				typeLink = PHOTO
 
 				if data.EntryData.PostPage[0].GraphQL.ShortcodeMedia.VideoUrl != "" {
 					link = data.EntryData.PostPage[0].GraphQL.ShortcodeMedia.VideoUrl
-					typeLink = PHOTO
+					typeLink = VIDEO
 				}
 			}
 
